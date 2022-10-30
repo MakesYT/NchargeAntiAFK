@@ -1,0 +1,4 @@
+name: NchargeAntiAFK
+version: '${project.version}'
+main: top.ncserver.nchargeantiafk.NchargeAntiAFK
+api-version: 1.15
