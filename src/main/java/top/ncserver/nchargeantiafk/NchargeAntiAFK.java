@@ -19,10 +19,13 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
         // Plugin startup logic
         logger.info("§aNchargeAntiAFK加载完成");
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
-            CheckingPlayer player1 = new CheckingPlayer(player);
-            player1.runTaskAsynchronously(this);
+            if (!player.hasPermission("nchargeantiafk.bypass")){
+                CheckingPlayer player1 = new CheckingPlayer(player);
+                player1.runTaskAsynchronously(this);
 
-            logger.info("§a对当前在线的玩家"+player.getDisplayName()+"加载NchargeAntiAFK成功");
+                logger.info("§a对当前在线的玩家"+player.getDisplayName()+"加载NchargeAntiAFK成功");
+            }else logger.info("§a玩家"+player.getDisplayName()+"拥有免检权限");
+
         }
 
         Bukkit.getPluginManager().registerEvents(this, this);
@@ -36,9 +39,12 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
     }
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent playerJoinEvent){
-        CheckingPlayer player = new CheckingPlayer(playerJoinEvent.getPlayer());
-        player.runTaskAsynchronously(this);
+        if (!playerJoinEvent.getPlayer().hasPermission("nchargeantiafk.bypass")) {
+            CheckingPlayer player = new CheckingPlayer(playerJoinEvent.getPlayer());
+            player.runTaskAsynchronously(this);
 
-        logger.info("§a对"+playerJoinEvent.getPlayer().getDisplayName()+"加载NchargeAntiAFK成功");
+            logger.info("§a对" + playerJoinEvent.getPlayer().getDisplayName() + "加载NchargeAntiAFK成功");
+        }else logger.info("§a玩家"+playerJoinEvent.getPlayer().getDisplayName()+"拥有免检权限");
+
     }
 }
