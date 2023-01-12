@@ -7,11 +7,11 @@ import java.util.logging.Logger;
 
 public class KickTimer extends BukkitRunnable {
     private final Player player;
-
+    private final String command;
     private final Logger logger=NchargeAntiAFK.getPlugin(NchargeAntiAFK.class).getLogger();
-    public KickTimer(Player player) {
+    public KickTimer(Player player,String command) {
         this.player = player;
-
+        this.command=command;
     }
     private boolean passed = false;
     @Override
@@ -25,11 +25,15 @@ public class KickTimer extends BukkitRunnable {
                     @Override
                     public void run()
                     {
-                        player.kickPlayer("§2[§bNchargeAntiAFK§2]§4验证失败");
+                        if (command.equals("null")) {
+                            NchargeAntiAFK.kickedPlayers.add(player.getName());
+                            player.kickPlayer("§2[§bNchargeAntiAFK§2]§4验证失败");
+                        }
+                        else player.performCommand(command.replace("%p", player.getDisplayName()));
                     }
                 }.runTask(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
 
-                logger.info("§4"+name+"因挂机验证未通过被提出");
+                logger.info("§4"+name+"挂机验证未通过");
 
                 this.cancel();
             }

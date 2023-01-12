@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 
 public class CheckingPlayer extends BukkitRunnable implements Listener {
     private final Player player;
+    private final String command;
     private final List<LocationWithTime> locations = new LinkedList<>();
     private final List<Integer> locationsInt = new LinkedList<>();
     private int chatCount = 0;
@@ -38,8 +39,9 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
 
     private final Plugin plugin = NchargeAntiAFK.getPlugin(NchargeAntiAFK.class);
 
-    public CheckingPlayer(Player player){
+    public CheckingPlayer(Player player,String command){
         this.player = player;
+        this.command = command;
     }
 
     @Override
@@ -102,7 +104,7 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                     if (InteractCount<=20)score=score+2;
                     else if (InteractCount>50&&InteractCount<1000)score--;
                     else if (InteractCount>=1500)score++;
-                    player.sendMessage("§2[§bNchargeAntiAFK§2]§a检测完成您的AFK指数为"+score);
+                    player.sendMessage("§2[§bNchargeAntiAFK§2]§ a检测完成您的AFK指数为"+score);
                         if (score>=3){
                             kickCheck();
                             logger.info("§a玩家"+player.getDisplayName()+"AFK");
@@ -159,9 +161,6 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
     public void onChat(AsyncPlayerChatEvent event)  {
 
         if (player.getUniqueId().equals(event.getPlayer().getUniqueId())){
-            if (event.isCancelled()){
-            player.sendMessage("此消息被中断"+event.getMessage());
-            }
             if (kickCheck){
                 event.setCancelled(true);
                 if (tryTimes>=2){
@@ -171,19 +170,28 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                         @Override
                         public void run()
                         {
-                            player.kickPlayer("§2[§bNchargeAntiAFK§2]§4多次验证失败");
+                            if (command.equals("null")) {
+                                NchargeAntiAFK.kickedPlayers.add(player.getName());
+                                player.kickPlayer("§2[§bNchargeAntiAFK§2]§4验证失败");
+                            }
+                            else player.performCommand(command.replace("%p", player.getDisplayName()));
                         }
                     }.runTask(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
 
-                    logger.info("§4"+name+"因挂机验证多次错误未通过被提出");
+                    logger.info("§4"+name+"挂机验证多次错误未通过");
                 }
                 try {
                     if(Integer.parseInt(event.getMessage())==int1+int2) {
+                        if (NchargeAntiAFK.kickedPlayers.contains(player.getName())){
+                            NchargeAntiAFK.kickedPlayers.remove(player.getName());
+                            logger.info("§a"+player.getDisplayName()+"移除二次监控");
+                        }
                         player.sendMessage("§2[§bNchargeAntiAFK§2]§a验证通过");
                         logger.info("§a"+player.getDisplayName()+"验证通过");
                         kickTimer.cancelTimer();
                         kickCheck = false;
                         tryTimes=0;
+
                     }else {
                         player.sendMessage("§2[§bNchargeAntiAFK§2]§4输入结果有误");
                         tryTimes++;
@@ -205,16 +213,27 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
     @EventHandler
     public void onInteractEvent(PlayerInteractEvent event){
 
-        if (player.getUniqueId().equals(event.getPlayer().getUniqueId()))
+        if (player.getUniqueId().equals(event.getPlayer().getUniqueId())) {
             InteractCount++;
+            if (kickCheck){
+                event.setCancelled(true);
+                event.getPlayer().sendMessage("§2[§bNchargeAntiAFK§2]§4请完成AFK验证");
+
+            }
+        }
     }
     public void kickCheck(){
-        kickTimer=new KickTimer(player);
+        kickTimer=new KickTimer(player,command);
         kickTimer.runTaskAsynchronously(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
         kickCheck=true;
          int1 =(int)(1+Math.random()*(10-1+1));
          int2 =(int)(1+Math.random()*(10-1+1));
-         logger.info("§a"+player.getDisplayName()+"的AFK验证:"+int1+"+"+int2+"=");
+        try {
+            player.getOpenInventory().close();
+        } catch (Exception e) {
+
+        }
+        logger.info("§a"+player.getDisplayName()+"的AFK验证:"+int1+"+"+int2+"=");
         player.sendMessage("§2[§bNchargeAntiAFK§2]§aAFK验证:请在聊天框输入"+int1+"+"+int2+"的正确答案");
         player.sendTitle("§a"+int1+"+"+int2+"=","§2[§bNchargeAntiAFK§2]§aAFK验证:请在聊天框输入正确答案");
     }
