@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 public class KickTimer extends BukkitRunnable {
     private final Player player;
     private final String command;
+    private boolean finished = false;
     private final Logger logger=NchargeAntiAFK.getPlugin(NchargeAntiAFK.class).getLogger();
     public KickTimer(Player player,String command) {
         this.player = player;
@@ -16,6 +17,7 @@ public class KickTimer extends BukkitRunnable {
     private boolean passed = false;
     @Override
     public void run() {
+        finished=false;
         try {
             Thread.sleep(60000);
             if (!passed){
@@ -30,9 +32,10 @@ public class KickTimer extends BukkitRunnable {
                             player.kickPlayer("§2[§bNchargeAntiAFK§2]§4验证失败");
                         }
                         else player.performCommand(command.replace("%p", player.getDisplayName()));
+
                     }
                 }.runTask(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
-
+                finished=true;
                 logger.info("§4"+name+"挂机验证未通过");
 
                 this.cancel();
@@ -43,7 +46,12 @@ public class KickTimer extends BukkitRunnable {
         }
     }
     public void cancelTimer() {
+        finished=true;
         passed =true;
         this.cancel();
+    }
+
+    public boolean isFinished() {
+        return finished;
     }
 }
