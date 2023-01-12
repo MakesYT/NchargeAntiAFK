@@ -48,9 +48,10 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
     public void run() {
         Bukkit.getPluginManager().registerEvents(this, NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
         player.sendMessage("§2[§bNchargeAntiAFK§2]§a本服务器禁止AFK,您的行为正在被监控");
+        kickTimer=new KickTimer(player,command);
         if (player.isOnline())
             try {
-                Thread.sleep(300000);
+               Thread.sleep(300000);
                // Thread.sleep(3000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -61,6 +62,8 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                     locationsInt.add(LocationToString(player.getLocation()));
                     locations.add(new LocationWithTime(player.getLocation(),System.currentTimeMillis()));
                   //  kickCheck();
+                }else{
+                    if (kickTimer.isFinished()) kickCheck=false ;
                 }
 
                 Thread.sleep(100);
@@ -174,7 +177,11 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                                 NchargeAntiAFK.kickedPlayers.add(player.getName());
                                 player.kickPlayer("§2[§bNchargeAntiAFK§2]§4验证失败");
                             }
-                            else player.performCommand(command.replace("%p", player.getDisplayName()));
+                            else {
+                                player.performCommand(command.replace("%p", player.getDisplayName()));
+                                kickTimer.cancelTimer();
+                                kickCheck = false;
+                            }
                         }
                     }.runTask(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
 
