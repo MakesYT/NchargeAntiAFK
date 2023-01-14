@@ -1,5 +1,5 @@
 name: NchargeAntiAFK
-version: '1.1.1'
+version: '${project.version}'
 main: top.ncserver.nchargeantiafk.NchargeAntiAFK
 api-version: 1.15
 permissions:

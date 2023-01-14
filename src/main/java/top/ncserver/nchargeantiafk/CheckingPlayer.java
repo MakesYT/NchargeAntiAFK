@@ -101,7 +101,7 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                     else  if (commandCount<=5&&commandCount!=0)score--;
 
 
-                    if (chatCount<2)score++;
+                    if (chatCount<2&&chatCount!=0)score++;
                     else if (chatCount>=5)score--;
 
                     if (InteractCount<=20)score=score+2;
@@ -109,14 +109,18 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                     else if (InteractCount>=1500)score++;
                     player.sendMessage("§2[§bNchargeAntiAFK§2]§ a检测完成您的AFK指数为"+score);
                         if (score>=3){
+
                             kickCheck();
                             logger.info("§a玩家"+player.getDisplayName()+"AFK");
                         }else if (score == 2) {
                             maybeAFKTimes++;
                             player.sendTitle("禁止AFK提醒","§2[§bNchargeAntiAFK§2]§a");
                             logger.info("§a玩家"+player.getDisplayName()+"疑似AFK");
+                        }else if (score<0){
+                            if (maybeAFKTimes==1)
+                                maybeAFKTimes--;
                         }
-                        if (maybeAFKTimes>=3){
+                        if (maybeAFKTimes>=2){
                             kickCheck();
                             maybeAFKTimes=0;
                             logger.info("§a玩家"+player.getDisplayName()+"多次疑似AFK");

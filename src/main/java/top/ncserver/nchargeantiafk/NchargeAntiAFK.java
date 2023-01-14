@@ -37,6 +37,8 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
     }
     @Override
     public void onEnable() {
+        Metrics metrics = new Metrics(this, 17410);
+
         this.config = new YamlConfiguration();
         this.configFile = new File(this.getDataFolder(), "config.yml");
         // Plugin startup logic
