@@ -48,7 +48,7 @@ public class KickTimer extends BukkitRunnable {
     public void cancelTimer() {
         finished=true;
         passed =true;
-        this.cancel();
+
     }
 
     public boolean isFinished() {
