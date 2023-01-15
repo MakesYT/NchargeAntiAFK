@@ -74,9 +74,7 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
         if (!playerJoinEvent.getPlayer().hasPermission("nchargeantiafk.bypass")) {
             CheckingPlayer player = new CheckingPlayer(playerJoinEvent.getPlayer(),config.getString("command"));
             player.runTaskAsynchronously(this);
-            if (kickedPlayers.contains(playerJoinEvent.getPlayer().getName())){
-                player.kickCheck();
-            }
+
             logger.info("§a对" + playerJoinEvent.getPlayer().getDisplayName() + "加载NchargeAntiAFK成功");
         }else logger.info("§a玩家"+playerJoinEvent.getPlayer().getDisplayName()+"拥有免检权限");
 

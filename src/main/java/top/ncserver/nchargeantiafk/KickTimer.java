@@ -48,7 +48,11 @@ public class KickTimer extends BukkitRunnable {
     public void cancelTimer() {
         finished=true;
         passed =true;
+        try {
+            this.cancel();
+        } catch (IllegalStateException ignored) {
 
+        }
     }
 
     public boolean isFinished() {

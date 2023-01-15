@@ -16,6 +16,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static top.ncserver.nchargeantiafk.NchargeAntiAFK.kickedPlayers;
+
 public class CheckingPlayer extends BukkitRunnable implements Listener {
     private final Player player;
     private final String command;
@@ -46,13 +48,17 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
 
     @Override
     public void run() {
+        kickTimer=new KickTimer(player,command);
+        if (kickedPlayers.contains(player.getName())){
+            kickCheck();
+        }
         Bukkit.getPluginManager().registerEvents(this, NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
         player.sendMessage("§2[§bNchargeAntiAFK§2]§a本服务器禁止AFK,您的行为正在被监控");
-        kickTimer=new KickTimer(player,command);
+
         if (player.isOnline())
             try {
                Thread.sleep(300000);
-               // Thread.sleep(3000);
+             //   Thread.sleep(3000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -178,7 +184,7 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                         public void run()
                         {
                             if (command.equals("null")) {
-                                NchargeAntiAFK.kickedPlayers.add(player.getName());
+                                kickedPlayers.add(player.getName());
                                 player.kickPlayer("§2[§bNchargeAntiAFK§2]§4验证失败");
                             }
                             else {
@@ -193,8 +199,8 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                 }
                 try {
                     if(Integer.parseInt(event.getMessage())==int1+int2) {
-                        if (NchargeAntiAFK.kickedPlayers.contains(player.getName())){
-                            NchargeAntiAFK.kickedPlayers.remove(player.getName());
+                        if (kickedPlayers.contains(player.getName())){
+                            kickedPlayers.remove(player.getName());
                             logger.info("§a"+player.getDisplayName()+"移除二次监控");
                         }
                         player.sendMessage("§2[§bNchargeAntiAFK§2]§a验证通过");
