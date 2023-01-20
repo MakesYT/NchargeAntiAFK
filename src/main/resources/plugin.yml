@@ -5,3 +5,9 @@ api-version: 1.15
 permissions:
   nchargeantiafk.bypass:
     default: op
+  nchargeantiafk.command:
+    default: op
+commands:
+  nchargeantiafk:
+    description: 立即要求指定玩家进行验证
+    usage: /nchargeantiafk 玩家

@@ -1,6 +1,7 @@
 package top.ncserver.nchargeantiafk;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -52,6 +53,7 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
     @Override
     public void onEnable() {
         Metrics metrics = new Metrics(this, 17410);
+        Bukkit.getPluginCommand("nchargeantiafk").setExecutor(this);
         this.configFile = new File(this.getDataFolder(), "config.yml");
         // Plugin startup logic
         if (!this.configFile.exists()) {
@@ -94,13 +96,26 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
 
         Bukkit.getPluginManager().registerEvents(this, this);
     }
-
     @Override
     public void onDisable() {
         Bukkit.getServer().getPluginManager().callEvent(new DisableEvent());
         logger.info("§aNchargeAntiAFK已卸载");
         HandlerList.unregisterAll((Plugin) this);
         // Plugin shutdown logic
+    }
+
+    @Override
+    public boolean onCommand(CommandSender commandSender, org.bukkit.command.Command command, String s, String[] strings) {
+        if(!commandSender.hasPermission("nchargeantiafk.command")) {
+            commandSender.sendMessage("§c您没有这个命令的权限");
+            return true;
+        }
+        if(strings.length == 0) {
+            commandSender.sendMessage("§c你需要指定玩家");
+            return true;
+        }
+        Bukkit.getServer().getPluginManager().callEvent(new verifyEvent(strings[0]));
+        return true;
     }
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent playerJoinEvent){

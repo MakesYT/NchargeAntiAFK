@@ -6,10 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -60,6 +57,7 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
         bukkitRunnable= new BukkitRunnable() {
             @Override
             public void run() {
+
                 if (!kickCheck){
                     if (passTimer>=passTimerMax){
                         locationsInt.add(LocationToString(player.getLocation()));
@@ -179,10 +177,17 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
         return Integer.parseInt(Math.abs((int) location.getX())+Math.abs((int)location.getY())+Math.abs((int)location.getZ())+"");
     }
     @EventHandler
-    public void onCustomEvent(DisableEvent event) {
+    public void onDisableEvent(DisableEvent event) {
         logger.info(player.getDisplayName()+"的监控已移除");
         bukkitRunnable.cancel();
         this.cancel();
+    }
+    @EventHandler
+    public void onVerifyEvent(verifyEvent event) {
+        if (event.getPlayerName().equals(player.getDisplayName())){
+            kickCheck();
+            passTimer=passTimerMax;
+        }
     }
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -242,7 +247,7 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                        // kickTimer.cancelTimer();
                         kickCheck = false;
                         tryTimes=0;
-                        passTimer=3000;
+                        passTimer=passTimerMax;
                         verifyTimer=0;
                     }else {
                         player.sendMessage("§2[§bNchargeAntiAFK§2]§4输入结果有误");
@@ -274,6 +279,19 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
             }
         }
     }
+    @EventHandler
+    public void onPlayerRespawnEvent(PlayerRespawnEvent event){
+
+        if (player.getUniqueId().equals(event.getPlayer().getUniqueId())) {
+            if (kickCheck){
+                player.sendTitle(verifyTimeTitle,verifyTimeSubtitle);
+                player.sendMessage(verifyTimeMsg);
+            }
+        }
+    }
+    private String verifyTimeMsg="";
+    private String verifyTimeTitle="";
+    private String verifyTimeSubtitle="";
     public void kickCheck(){
 
         kickCheck=true;
@@ -285,7 +303,10 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
 
         }
         logger.info("§a"+player.getDisplayName()+"的AFK验证:"+int1+"+"+int2+"=");
-        player.sendMessage("§2[§bNchargeAntiAFK§2]§aAFK验证:请在聊天框输入"+int1+"+"+int2+"的正确答案");
-        player.sendTitle("§a"+int1+"+"+int2+"=","§2[§bNchargeAntiAFK§2]§aAFK验证:请在聊天框输入正确答案");
+        verifyTimeMsg="§2[§bNchargeAntiAFK§2]§aAFK验证:请在聊天框输入"+int1+"+"+int2+"的正确答案";
+        player.sendMessage(verifyTimeMsg);
+        verifyTimeTitle="§a"+int1+"+"+int2+"=";
+        verifyTimeSubtitle="§2[§bNchargeAntiAFK§2]§aAFK验证:请在聊天框输入正确答案";
+        player.sendTitle(verifyTimeTitle,verifyTimeSubtitle);
     }
 }
