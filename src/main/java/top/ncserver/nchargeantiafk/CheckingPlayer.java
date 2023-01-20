@@ -29,50 +29,68 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
     private int InteractCount = 0;
     private int maybeAFKTimes=0;
 
+    private int verifyTimer=0;
+    private int verifyTimerMax = 600;
+    private int passTimer=0;
+    private int passTimerMax=3000;
     private final Logger logger=NchargeAntiAFK.getPlugin(NchargeAntiAFK.class).getLogger();
     private boolean kickCheck = false;
     private int int1;
     private int int2;
-    private KickTimer kickTimer;
 
-    private boolean nowCheck = true;
-
-
+    private BukkitRunnable bukkitRunnable;
 
     private final Plugin plugin = NchargeAntiAFK.getPlugin(NchargeAntiAFK.class);
 
     public CheckingPlayer(Player player,String command){
         this.player = player;
         this.command = command;
+        this.passTimerMax=NchargeAntiAFK.config.getInt("passTime");
+        this.verifyTimerMax=NchargeAntiAFK.config.getInt("verifyTime");
     }
 
     @Override
     public void run() {
-        kickTimer=new KickTimer(player,command);
+        //kickTimer=new KickTimer(player,command);
         if (kickedPlayers.contains(player.getName())){
             kickCheck();
         }
         Bukkit.getPluginManager().registerEvents(this, NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
         player.sendMessage("§2[§bNchargeAntiAFK§2]§a本服务器禁止AFK,您的行为正在被监控");
-
-        if (player.isOnline())
-            try {
-               Thread.sleep(300000);
-             //   Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        while (player.isOnline()&&NchargeAntiAFK.getPlugin(NchargeAntiAFK.class).isEnabled()&&nowCheck) {
-            try {
+        bukkitRunnable= new BukkitRunnable() {
+            @Override
+            public void run() {
                 if (!kickCheck){
-                    locationsInt.add(LocationToString(player.getLocation()));
-                    locations.add(new LocationWithTime(player.getLocation(),System.currentTimeMillis()));
-                  //  kickCheck();
-                }else{
-                    if (kickTimer.isFinished()) kickCheck=false ;
+                    if (passTimer>=passTimerMax){
+                        locationsInt.add(LocationToString(player.getLocation()));
+                        locations.add(new LocationWithTime(player.getLocation(),System.currentTimeMillis()));
+                    }else {
+                        passTimer++;
+                    }
+
+                    //  kickCheck();
+                }else {
+                    verifyTimer++;
+                    if (verifyTimer>=verifyTimerMax){
+                        String name = player.getDisplayName();
+                        new BukkitRunnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                if (command.equals("null")) {
+                                    if (!kickedPlayers.contains(player.getName()))
+                                        kickedPlayers.add(player.getName());
+                                    player.kickPlayer("§2[§bNchargeAntiAFK§2]§4验证失败");
+                                }
+                                else player.performCommand(command.replace("%p", player.getDisplayName()));
+
+                            }
+                        }.runTask(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
+                        logger.info("§4"+name+"挂机验证未通过");
+                    }
                 }
 
-                Thread.sleep(100);
                 if (locations.size()>=3000){
 
                     int score =0;
@@ -113,24 +131,24 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                     if (InteractCount<=20)score=score+2;
                     else if (InteractCount>50&&InteractCount<1000)score--;
                     else if (InteractCount>=1500)score++;
-                    player.sendMessage("§2[§bNchargeAntiAFK§2]§ a检测完成您的AFK指数为"+score);
-                        if (score>=3){
+                    player.sendMessage("§2[§bNchargeAntiAFK§2]§a检测完成您的AFK指数为"+score);
+                    if (score>=3){
 
-                            kickCheck();
-                            logger.info("§a玩家"+player.getDisplayName()+"AFK");
-                        }else if (score == 2) {
-                            maybeAFKTimes++;
-                            player.sendTitle("禁止AFK提醒","§2[§bNchargeAntiAFK§2]§a");
-                            logger.info("§a玩家"+player.getDisplayName()+"疑似AFK");
-                        }else if (score<0){
-                            if (maybeAFKTimes==1)
-                                maybeAFKTimes--;
-                        }
-                        if (maybeAFKTimes>=2){
-                            kickCheck();
-                            maybeAFKTimes=0;
-                            logger.info("§a玩家"+player.getDisplayName()+"多次疑似AFK");
-                        }
+                        kickCheck();
+                        logger.info("§a玩家"+player.getDisplayName()+"AFK");
+                    }else if (score == 2) {
+                        maybeAFKTimes++;
+                        player.sendTitle("禁止AFK提醒","§2[§bNchargeAntiAFK§2]§a");
+                        logger.info("§a玩家"+player.getDisplayName()+"疑似AFK");
+                    }else if (score<0){
+                        if (maybeAFKTimes==1)
+                            maybeAFKTimes--;
+                    }
+                    if (maybeAFKTimes>=2){
+                        kickCheck();
+                        maybeAFKTimes=0;
+                        logger.info("§a玩家"+player.getDisplayName()+"多次疑似AFK");
+                    }
 
 
 
@@ -149,22 +167,30 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                     InteractCount=0;
                     locationsInt.clear();
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
-        }
+        };
+        bukkitRunnable.runTaskTimer(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class),0,2);
+
         //注销事件
-        HandlerList.unregisterAll(this);
+        //HandlerList.unregisterAll(this);
 
     }
     public int LocationToString(Location location){
         return Integer.parseInt(Math.abs((int) location.getX())+Math.abs((int)location.getY())+Math.abs((int)location.getZ())+"");
     }
     @EventHandler
+    public void onCustomEvent(DisableEvent event) {
+        logger.info(player.getDisplayName()+"的监控已移除");
+        bukkitRunnable.cancel();
+        this.cancel();
+    }
+    @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (player.getUniqueId().equals(event.getPlayer().getUniqueId())){
             logger.info("§a对"+event.getPlayer().getDisplayName()+"卸载NchargeAntiAFK成功");
             event.getHandlers().unregister(this);
+            bukkitRunnable.cancel();
+
             this.cancel();
 
         }
@@ -184,12 +210,13 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                         public void run()
                         {
                             if (command.equals("null")) {
-                                kickedPlayers.add(player.getName());
+                                if (!kickedPlayers.contains(player.getName()))
+                                    kickedPlayers.add(player.getName());
                                 player.kickPlayer("§2[§bNchargeAntiAFK§2]§4验证失败");
                             }
                             else {
                                 player.performCommand(command.replace("%p", player.getDisplayName()));
-                                kickTimer.cancelTimer();
+                               // kickTimer.cancelTimer();
                                 kickCheck = false;
                             }
                         }
@@ -200,15 +227,23 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                 try {
                     if(Integer.parseInt(event.getMessage())==int1+int2) {
                         if (kickedPlayers.contains(player.getName())){
-                            kickedPlayers.remove(player.getName());
+                            if (!kickedPlayers.remove(player.getName())) {
+                                for (int i = 0; i < kickedPlayers.size(); i++) {
+                                    if (kickedPlayers.get(i).equals(player.getName())){
+                                        kickedPlayers.remove(i);
+                                        break;
+                                    }
+                                }
+                            }
                             logger.info("§a"+player.getDisplayName()+"移除二次监控");
                         }
                         player.sendMessage("§2[§bNchargeAntiAFK§2]§a验证通过");
                         logger.info("§a"+player.getDisplayName()+"验证通过");
-                        kickTimer.cancelTimer();
+                       // kickTimer.cancelTimer();
                         kickCheck = false;
                         tryTimes=0;
-
+                        passTimer=3000;
+                        verifyTimer=0;
                     }else {
                         player.sendMessage("§2[§bNchargeAntiAFK§2]§4输入结果有误");
                         tryTimes++;
@@ -240,8 +275,7 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
         }
     }
     public void kickCheck(){
-        kickTimer=new KickTimer(player,command);
-        kickTimer.runTaskAsynchronously(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
+
         kickCheck=true;
          int1 =(int)(1+Math.random()*(10-1+1));
          int2 =(int)(1+Math.random()*(10-1+1));

@@ -1,16 +1,17 @@
 package top.ncserver.nchargeantiafk;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
 public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
     private final Logger logger=this.getLogger();
     private File configFile;
-    private YamlConfiguration config;
+    public static FileConfiguration config;
     public static List<String> kickedPlayers=new ArrayList<String>();
     public static List<CheckingPlayer> checkingPlayers=new ArrayList<CheckingPlayer>();
     public static void copyFile(InputStream inputStream, File file) {
@@ -35,11 +36,22 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
             e.printStackTrace();
         }
     }
+    private static void addConfig(String str,File file) throws IOException {
+        FileWriter fstream = new FileWriter(file, true);
+
+        BufferedWriter out = new BufferedWriter(fstream);
+
+        out.write(str);
+
+        out.newLine();
+
+        //close buffer writer
+
+        out.close();
+    }
     @Override
     public void onEnable() {
         Metrics metrics = new Metrics(this, 17410);
-
-        this.config = new YamlConfiguration();
         this.configFile = new File(this.getDataFolder(), "config.yml");
         // Plugin startup logic
         if (!this.configFile.exists()) {
@@ -48,8 +60,28 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
 
             this.getLogger().info("File: 已生成 config.yml 文件");
         }
-        this.config = YamlConfiguration.loadConfiguration(this.configFile);
-        this.getLogger().info("当前AFK处理方案"+config.getString("command"));
+        config = YamlConfiguration.loadConfiguration(this.configFile);
+        if (!config.contains("verifyTime")){
+            logger.info("添加verifyTime配置");
+            try {
+                addConfig("verifyTime : 600",configFile);
+                config = YamlConfiguration.loadConfiguration(this.configFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+        if (!config.contains("passTime")){
+            try {
+                addConfig("passTime : 3000",configFile);
+                config = YamlConfiguration.loadConfiguration(this.configFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        this.getLogger().info("当前AFK处理方案"+config.getString("command")+
+                ",验证时间:"+(config.getInt("verifyTime")/10)+"秒"+
+                ",免检时间:"+(config.getInt("passTime")/10)+"秒");
         logger.info("§aNchargeAntiAFK加载完成");
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             if (!player.hasPermission("nchargeantiafk.bypass")){
@@ -65,8 +97,9 @@ public final class NchargeAntiAFK extends JavaPlugin  implements Listener {
 
     @Override
     public void onDisable() {
-
+        Bukkit.getServer().getPluginManager().callEvent(new DisableEvent());
         logger.info("§aNchargeAntiAFK已卸载");
+        HandlerList.unregisterAll((Plugin) this);
         // Plugin shutdown logic
     }
     @EventHandler

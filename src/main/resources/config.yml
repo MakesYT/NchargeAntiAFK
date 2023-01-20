@@ -1,1 +1,3 @@
 command: "null" #让玩家执行的命令(无需/) 用占位符%p表示玩家名字 null即使用AFK踢出,一定要有""
+verifyTime : 600 #单位0.1s e.g.填写600即为60s
+passTime : 3000 #单位0.1s e.g.填写600即为60s
