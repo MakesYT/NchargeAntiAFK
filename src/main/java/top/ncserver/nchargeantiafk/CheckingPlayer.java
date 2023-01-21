@@ -10,6 +10,7 @@ import org.bukkit.event.player.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import javax.swing.event.EventListenerList;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -60,6 +61,7 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
 
                 if (!kickCheck){
                     if (passTimer>=passTimerMax){
+                       // logger.info(String.valueOf(false));
                         locationsInt.add(LocationToString(player.getLocation()));
                         locations.add(new LocationWithTime(player.getLocation(),System.currentTimeMillis()));
                     }else {
@@ -193,7 +195,7 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (player.getUniqueId().equals(event.getPlayer().getUniqueId())){
             logger.info("§a对"+event.getPlayer().getDisplayName()+"卸载NchargeAntiAFK成功");
-            event.getHandlers().unregister(this);
+            HandlerList.unregisterAll( this);
             bukkitRunnable.cancel();
 
             this.cancel();
@@ -244,11 +246,18 @@ public class CheckingPlayer extends BukkitRunnable implements Listener {
                         }
                         player.sendMessage("§2[§bNchargeAntiAFK§2]§a验证通过");
                         logger.info("§a"+player.getDisplayName()+"验证通过");
-                       // kickTimer.cancelTimer();
-                        kickCheck = false;
-                        tryTimes=0;
-                        passTimer=passTimerMax;
-                        verifyTimer=0;
+                        new BukkitRunnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                kickCheck = false;
+                                tryTimes=0;
+                                passTimer=passTimerMax;
+                                verifyTimer=0;
+                            }
+                        }.runTask(NchargeAntiAFK.getPlugin(NchargeAntiAFK.class));
+
                     }else {
                         player.sendMessage("§2[§bNchargeAntiAFK§2]§4输入结果有误");
                         tryTimes++;
